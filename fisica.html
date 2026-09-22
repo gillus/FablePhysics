@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laboratorio di Fisica 2D</title>
+<style>
+  :root {
+    --bg: #0f1218;
+    --panel: #171c26;
+    --panel2: #1f2633;
+    --border: #2b3445;
+    --text: #e6e9ef;
+    --muted: #8b95a7;
+    --accent: #4fa3ff;
+    --accent2: #ffb454;
+    --ke: #ff6b6b;
+    --pe: #4fd1c5;
+    --el: #c792ea;
+    --tot: #ffd166;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font: 13px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; overflow: hidden; }
+  #app { display: flex; height: 100vh; width: 100vw; }
+  #stage { flex: 1; position: relative; min-width: 0; }
+  #world { display: block; width: 100%; height: 100%; cursor: crosshair; background:
+    radial-gradient(ellipse at 50% 0%, #1a2130 0%, #0f1218 70%); touch-action: none; }
+  #hud { position: absolute; left: 12px; top: 10px; pointer-events: none; color: var(--muted);
+    font-size: 12px; text-shadow: 0 1px 2px #000; white-space: pre; }
+  #toast { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%);
+    background: rgba(23,28,38,.92); border: 1px solid var(--border); padding: 6px 12px;
+    border-radius: 8px; color: var(--text); opacity: 0; transition: opacity .25s; pointer-events: none; }
+  #toast.show { opacity: 1; }
+  #panel { width: 320px; background: var(--panel); border-left: 1px solid var(--border);
+    overflow-y: auto; padding: 12px 14px 24px; display: flex; flex-direction: column; gap: 12px; }
+  h1 { font-size: 15px; margin: 0 0 2px; letter-spacing: .3px; }
+  h1 small { color: var(--muted); font-weight: normal; font-size: 11px; margin-left: 6px; }
+  section { background: var(--panel2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+  section h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin: 0 0 8px; }
+  .row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+  .row[hidden] { display: none; }
+  .row label { flex: 0 0 92px; color: var(--text); }
+  .row input[type=range] { flex: 1; min-width: 0; accent-color: var(--accent); }
+  .row output { flex: 0 0 58px; text-align: right; color: var(--accent2); font-variant-numeric: tabular-nums; }
+  .btns { display: flex; flex-wrap: wrap; gap: 6px; }
+  button { background: #2a3344; color: var(--text); border: 1px solid var(--border); border-radius: 7px;
+    padding: 6px 10px; cursor: pointer; font: inherit; }
+  button:hover { background: #33405a; }
+  button.active { background: var(--accent); color: #05101f; border-color: var(--accent); font-weight: 600; }
+  button.warn { border-color: #6b3a3a; }
+  button.warn:hover { background: #4a2a2a; }
+  .check { display: flex; align-items: center; gap: 6px; margin: 4px 0; cursor: pointer; }
+  .check input { accent-color: var(--accent); }
+  #chart { width: 100%; height: 130px; display: block; background: #12161f; border-radius: 6px; }
+  .legend { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; font-size: 12px; font-variant-numeric: tabular-nums; }
+  .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+  .legend .ke::before { background: var(--ke); } .legend .pe::before { background: var(--pe); }
+  .legend .el::before { background: var(--el); } .legend .tot::before { background: var(--tot); }
+  .help { color: var(--muted); font-size: 11.5px; line-height: 1.5; }
+  .help b { color: var(--text); }
+  kbd { background: #0f1218; border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; font-size: 11px; }
+  @media (max-width: 760px) {
+    #app { flex-direction: column; }
+    #panel { width: 100%; max-height: 45vh; border-left: 0; border-top: 1px solid var(--border); }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage">
+    <canvas id="world"></canvas>
+    <div id="hud"></div>
+    <div id="toast"></div>
+  </div>
+  <div id="panel">
+    <h1>Laboratorio di Fisica 2D <small>motore proprio, zero librerie</small></h1>
+
+    <section>
+      <h2>Strumento</h2>
+      <div class="btns" id="tools">
+        <button data-tool="ball" class="active" title="Clic: crea pallina. Trascina: lancia. Trascina una pallina esistente per spostarla.">Pallina</button>
+        <button data-tool="spring" title="Clic su due palline per collegarle con una molla. Clic nel vuoto = perno fisso.">Molla</button>
+        <button data-tool="rod" title="Asta rigida: come la molla ma indeformabile (per pendoli e catene).">Asta</button>
+        <button data-tool="delete" title="Clic su pallina, muro, molla o perno per eliminarlo.">Elimina</button>
+      </div>
+      <div class="row"><label>Raggio</label><input type="range" id="radius" min="6" max="60" step="1" value="18"><output id="radiusOut">18 px</output></div>
+      <div class="row"><label>Densità</label><input type="range" id="density" min="1" max="50" step="1" value="10"><output id="densityOut">10</output></div>
+    </section>
+
+    <section>
+      <h2>Mondo</h2>
+      <div class="row"><label>Gravità</label><input type="range" id="gravity" min="0" max="30" step="0.01" value="9.81"><output id="gravityOut">9.81 m/s²</output></div>
+      <div class="btns">
+        <button data-g="1.62">Luna</button>
+        <button data-g="9.81" class="active">Terra</button>
+        <button data-g="24.79">Giove</button>
+        <button data-g="0">Zero-g</button>
+      </div>
+      <div class="row"><label>Elasticità</label><input type="range" id="rest" min="0" max="1" step="0.01" value="0.8"><output id="restOut">0.80</output></div>
+      <div class="row"><label>Attrito</label><input type="range" id="fric" min="0" max="1" step="0.01" value="0.2"><output id="fricOut">0.20</output></div>
+      <div class="row"><label title="Quanto in fretta una pallina che rotola perde giri. 0 = rotola all'infinito.">Res. rotolam.</label><input type="range" id="roll" min="0" max="3" step="0.01" value="0.3"><output id="rollOut">0.30</output></div>
+      <div class="row"><label>Rigidità molla</label><input type="range" id="stiff" min="5" max="400" step="1" value="60"><output id="stiffOut">60 N/m</output></div>
+      <div class="row"><label>Smorzamento</label><input type="range" id="damp" min="0" max="5" step="0.05" value="0.3"><output id="dampOut">0.30</output></div>
+    </section>
+
+    <section>
+      <h2>Tempo</h2>
+      <div class="btns">
+        <button id="pauseBtn">⏸ Pausa</button>
+        <button id="stepBtn" title="Avanza di un fotogramma (1/60 s)">⏭ Passo</button>
+        <button id="clearBtn" class="warn">🗑 Svuota</button>
+      </div>
+      <div class="row"><label>Rallentatore</label><input type="range" id="speed" min="0.02" max="2" step="0.01" value="1"><output id="speedOut">1.00×</output></div>
+    </section>
+
+    <section>
+      <h2>Visualizza</h2>
+      <label class="check"><input type="checkbox" id="showVel" checked> Vettori velocità</label>
+      <label class="check"><input type="checkbox" id="showTrail"> Scie</label>
+      <label class="check"><input type="checkbox" id="showInfo" checked> Dati sulle palline (massa, |v|, ω)</label>
+    </section>
+
+    <section>
+      <h2>Energia</h2>
+      <canvas id="chart" width="290" height="130"></canvas>
+      <div class="legend">
+        <span class="ke">Ec <output id="keOut">0</output></span>
+        <span class="pe">Ep <output id="peOut">0</output></span>
+        <span class="el">Ee <output id="elOut">0</output></span>
+        <span class="tot">Tot <output id="totOut">0</output></span>
+      </div>
+    </section>
+
+    <section>
+      <h2>Scene pronte</h2>
+      <div class="btns">
+        <button data-scene="cradle">Pendolo di Newton</button>
+        <button data-scene="incline">Piano inclinato</button>
+        <button data-scene="avalanche">Valanga</button>
+        <button data-scene="collision">Scontro</button>
+        <button data-scene="chain">Catena</button>
+      </div>
+      <div class="row" id="centerMassRow" hidden title="Massa delle tre palline ferme al centro della scena Scontro (raggio invariato). Agisce anche a simulazione in corso.">
+        <label>Massa centro</label><input type="range" id="cmass" min="0.2" max="10" step="0.1" value="1"><output id="cmassOut">1.0 kg</output>
+      </div>
+    </section>
+
+    <section class="help">
+      <b>Come si usa</b><br>
+      <b>Clic sinistro</b> nel vuoto crea una pallina; <b>trascina</b> per lanciarla (la freccia mostra la velocità).<br>
+      <b>Trascina</b> una pallina esistente per spostarla e rilanciarla.<br>
+      <b>Tasto destro + trascina</b> disegna un muro o una rampa.<br>
+      <b>Molla / Asta</b>: clic su una pallina, poi su un'altra pallina oppure nel vuoto (crea un perno fisso: pendolo).<br>
+      Le palline ruotano (disco pieno, I = ½mr²): l'attrito le fa rotolare. Scala: 100 px = 1 m. Tasti: <kbd>Spazio</kbd> pausa, <kbd>V</kbd> vettori, <kbd>Esc</kbd> annulla, <kbd>Canc</kbd> svuota.
+    </section>
+  </div>
+</div>
+
+<script id="engine">
+/* ================================================================
+   MOTORE FISICO 2D — indipendente dal DOM (testabile anche in Node)
+   Unità interne: pixel, secondi. PPM = pixel per metro.
+   ================================================================ */
+const PPM = 100;
+
+class Body {
+  constructor(x, y, r, density, opts = {}) {
+    this.x = x; this.y = y; this.r = r;
+    this.vx = opts.vx || 0; this.vy = opts.vy || 0;
+    this.fx = 0; this.fy = 0;
+    this.fixed = !!opts.fixed;          // perno: massa infinita, non collide
+    const rm = r / PPM;
+    this.mass = this.fixed ? Infinity : Math.PI * rm * rm * density;
+    this.invMass = this.fixed ? 0 : 1 / this.mass;
+    this.angle = 0; this.omega = opts.omega || 0;         // rad, rad/s
+    this.inertia = this.fixed ? Infinity : 0.5 * this.mass * r * r;   // disco pieno, kg·px²
+    this.invI = this.fixed ? 0 : 1 / this.inertia;
+    this.color = opts.color || null;
+    this.tag = opts.tag || null;
+    this.trail = [];
+    this.id = Body.nextId++;
+  }
+  setMass(m) {   // cambia la massa a raggio fissato (cambia la densità)
+    if (this.fixed) return;
+    this.mass = m; this.invMass = 1 / m;
+    this.inertia = 0.5 * m * this.r * this.r; this.invI = 1 / this.inertia;
+  }
+}
+Body.nextId = 1;
+
+class Wall {
+  constructor(x1, y1, x2, y2, half = 4) {
+    this.x1 = x1; this.y1 = y1; this.x2 = x2; this.y2 = y2; this.half = half;
+    this.id = Wall.nextId++;
+  }
+}
+Wall.nextId = 1;
+
+class Link {   // molla (rigid=false) o asta rigida (rigid=true)
+  constructor(a, b, opts = {}) {
+    this.a = a; this.b = b;
+    this.rigid = !!opts.rigid;
+    this.rest = opts.rest != null ? opts.rest : Math.hypot(b.x - a.x, b.y - a.y);
+    this.k = opts.k;          // N/m (null => usa valore globale del mondo)
+    this.c = opts.c;          // smorzamento
+    this.id = Link.nextId++;
+  }
+}
+Link.nextId = 1;
+
+class World {
+  constructor(w, h) {
+    this.w = w; this.h = h;
+    this.bodies = []; this.walls = []; this.links = [];
+    this.gravity = 9.81;        // m/s²
+    this.restitution = 0.8;
+    this.friction = 0.2;
+    this.rolling = 0.3;         // resistenza al rotolamento (0 = rotola per sempre)
+    this.stiffness = 60;        // N/m
+    this.damping = 0.3;         // N·s/m
+    this.airDrag = 0.0;         // coefficiente lineare 1/s
+    this.time = 0;
+    this.substeps = 8;
+    this.iterations = 6;
+    this.maxSpeed = 60 * PPM;   // 60 m/s
+    this.bounds = true;         // i bordi del canvas sono muri
+    this.floorY = h;            // riferimento per energia potenziale
+  }
+
+  resize(w, h) { this.w = w; this.h = h; this.floorY = h; }
+  clear() { this.bodies.length = 0; this.walls.length = 0; this.links.length = 0; this.time = 0; }
+
+  addBody(b) { this.bodies.push(b); return b; }
+  addWall(w) { this.walls.push(w); return w; }
+  addLink(l) { this.links.push(l); return l; }
+
+  removeBody(b) {
+    this.bodies = this.bodies.filter(o => o !== b);
+    this.links = this.links.filter(l => l.a !== b && l.b !== b);
+  }
+  removeWall(w) { this.walls = this.walls.filter(o => o !== w); }
+  removeLink(l) { this.links = this.links.filter(o => o !== l); }
+
+  /* ---------- passo temporale ---------- */
+  step(dt) {
+    const n = this.substeps, h = dt / n;
+    for (let i = 0; i < n; i++) this.substep(h);
+    this.time += dt;
+  }
+
+  substep(h) {
+    const g = this.gravity * PPM;
+    // forze
+    for (const b of this.bodies) { b.fx = 0; b.fy = 0; }
+    for (const l of this.links) if (!l.rigid) this.applySpring(l);
+    // integrazione (Eulero semi-implicito)
+    for (const b of this.bodies) {
+      if (b.fixed) continue;
+      b.vx += (b.fx * b.invMass) * h;
+      b.vy += (b.fy * b.invMass + g) * h;
+      if (this.airDrag > 0) { const f = Math.max(0, 1 - this.airDrag * h); b.vx *= f; b.vy *= f; }
+      const s2 = b.vx * b.vx + b.vy * b.vy;
+      if (s2 > this.maxSpeed * this.maxSpeed) { const s = Math.sqrt(s2); b.vx *= this.maxSpeed / s; b.vy *= this.maxSpeed / s; }
+      b.x += b.vx * h; b.y += b.vy * h;
+      b.angle += b.omega * h;
+    }
+    // vincoli e urti (impulsi + correzione posizionale), più iterazioni
+    const pairs = this.broadphase();
+    for (let it = 0; it < this.iterations; it++) {
+      for (const l of this.links) if (l.rigid) this.solveRod(l);
+      for (const [a, b] of pairs) this.collideBalls(a, b);
+      for (const b of this.bodies) {
+        if (b.fixed) continue;
+        for (const w of this.walls) this.collideWall(b, w);
+        if (this.bounds) this.collideBounds(b);
+      }
+    }
+  }
+
+  /* ---------- broadphase a griglia ---------- */
+  broadphase() {
+    const bs = this.bodies, pairs = [];
+    let maxR = 0;
+    for (const b of bs) if (!b.fixed && b.r > maxR) maxR = b.r;
+    if (bs.length < 40) {
+      for (let i = 0; i < bs.length; i++) for (let j = i + 1; j < bs.length; j++)
+        if (!bs[i].fixed && !bs[j].fixed) pairs.push([bs[i], bs[j]]);
+      return pairs;
+    }
+    const cell = Math.max(8, maxR * 2), grid = new Map();
+    const key = (cx, cy) => cx * 73856093 ^ cy * 19349663;
+    for (const b of bs) {
+      if (b.fixed) continue;
+      const cx = Math.floor(b.x / cell), cy = Math.floor(b.y / cell), k = key(cx, cy);
+      let arr = grid.get(k); if (!arr) grid.set(k, arr = []); arr.push(b);
+    }
+    const seen = new Set();
+    for (const b of bs) {
+      if (b.fixed) continue;
+      const cx = Math.floor(b.x / cell), cy = Math.floor(b.y / cell);
+      for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
+        const arr = grid.get(key(cx + dx, cy + dy)); if (!arr) continue;
+        for (const o of arr) {
+          if (o === b) continue;
+          const id = b.id < o.id ? b.id * 1e6 + o.id : o.id * 1e6 + b.id;
+          if (seen.has(id)) continue; seen.add(id);
+          const rr = b.r + o.r;
+          if ((b.x - o.x) ** 2 + (b.y - o.y) ** 2 < rr * rr * 1.2) pairs.push([b, o]);
+        }
+      }
+    }
+    return pairs;
+  }
+
+  /* ---------- molle ---------- */
+  applySpring(l) {
+    const a = l.a, b = l.b;
+    let dx = b.x - a.x, dy = b.y - a.y, d = Math.sqrt(dx * dx + dy * dy);
+    if (d < 1e-6) return;
+    dx /= d; dy /= d;
+    const k = (l.k != null ? l.k : this.stiffness);
+    const c = (l.c != null ? l.c : this.damping);
+    const ext = (d - l.rest) / PPM;                       // metri
+    const relV = ((b.vx - a.vx) * dx + (b.vy - a.vy) * dy) / PPM;
+    const F = (k * ext + c * relV) * PPM;                 // in "px-Newton" (kg·px/s²)
+    a.fx += F * dx; a.fy += F * dy;
+    b.fx -= F * dx; b.fy -= F * dy;
+  }
+
+  /* ---------- aste rigide (vincolo di distanza) ---------- */
+  solveRod(l) {
+    const a = l.a, b = l.b;
+    const im = a.invMass + b.invMass; if (im === 0) return;
+    let dx = b.x - a.x, dy = b.y - a.y, d = Math.sqrt(dx * dx + dy * dy);
+    if (d < 1e-6) { dx = 1; dy = 0; d = 1; } else { dx /= d; dy /= d; }
+    // velocità: rimuovi componente relativa lungo l'asta
+    const vn = (b.vx - a.vx) * dx + (b.vy - a.vy) * dy;
+    const j = -vn / im;
+    a.vx -= j * a.invMass * dx; a.vy -= j * a.invMass * dy;
+    b.vx += j * b.invMass * dx; b.vy += j * b.invMass * dy;
+    // posizione: riporta alla lunghezza di riposo
+    const err = d - l.rest;
+    const corr = err / im;
+    a.x += corr * a.invMass * dx; a.y += corr * a.invMass * dy;
+    b.x -= corr * b.invMass * dx; b.y -= corr * b.invMass * dy;
+  }
+
+  /* ---------- urto tra palline ---------- */
+  collideBalls(a, b) {
+    let dx = b.x - a.x, dy = b.y - a.y;
+    const rr = a.r + b.r;
+    let d2 = dx * dx + dy * dy;
+    if (d2 >= rr * rr) return;
+    let d = Math.sqrt(d2);
+    if (d < 1e-9) { dx = 1; dy = 0; d = 1e-9; }
+    const nx = dx / d, ny = dy / d;
+    const pen = rr - d;
+    this.resolve(a, b, nx, ny, pen);
+  }
+
+  /* impulso con restituzione + attrito di Coulomb + correzione posizionale */
+  resolve(a, b, nx, ny, pen) {
+    const im = a.invMass + b.invMass; if (im === 0) return;
+    const rvx = b.vx - a.vx, rvy = b.vy - a.vy;
+    const vn = rvx * nx + rvy * ny;
+    if (vn < 0) {
+      // restituzione solo se la velocità d'urto è apprezzabile (evita jitter a riposo)
+      const e = Math.abs(vn) > 0.6 * PPM * 0.15 ? this.restitution : 0;
+      const j = -(1 + e) * vn / im;
+      a.vx -= j * a.invMass * nx; a.vy -= j * a.invMass * ny;
+      b.vx += j * b.invMass * nx; b.vy += j * b.invMass * ny;
+      // attrito: velocità relativa nel punto di contatto, inclusa la rotazione
+      // punto di contatto: +r·n rispetto ad a, -r·n rispetto a b; ω×r in 2D = (-ω r_y, ω r_x)
+      const tx = -ny, ty = nx;
+      const vta = (b.vx - a.vx) * tx + (b.vy - a.vy) * ty - b.r * b.omega - a.r * a.omega;
+      {
+        const den = im + a.r * a.r * a.invI + b.r * b.r * b.invI;
+        let jt = -vta / den;
+        const maxF = this.friction * j;
+        if (jt > maxF) jt = maxF; else if (jt < -maxF) jt = -maxF;
+        a.vx -= jt * a.invMass * tx; a.vy -= jt * a.invMass * ty;
+        b.vx += jt * b.invMass * tx; b.vy += jt * b.invMass * ty;
+        // coppia: cross(r_a, jt·t) con r_a = r·n  ->  r·jt·(n×t) = r·jt ; per b r_b = -r·n
+        a.omega -= a.r * jt * a.invI;
+        b.omega -= b.r * jt * b.invI;
+      }
+    }
+    // correzione posizionale
+    const slop = 0.05, pct = 0.6;
+    const c = Math.max(pen - slop, 0) / im * pct;
+    a.x -= c * a.invMass * nx; a.y -= c * a.invMass * ny;
+    b.x += c * b.invMass * nx; b.y += c * b.invMass * ny;
+  }
+
+  /* ---------- urto pallina-muro (segmento spesso) ---------- */
+  collideWall(b, w) {
+    const ex = w.x2 - w.x1, ey = w.y2 - w.y1, len2 = ex * ex + ey * ey;
+    let t = len2 > 0 ? ((b.x - w.x1) * ex + (b.y - w.y1) * ey) / len2 : 0;
+    t = t < 0 ? 0 : t > 1 ? 1 : t;
+    const qx = w.x1 + ex * t, qy = w.y1 + ey * t;
+    const dx = b.x - qx, dy = b.y - qy, d2 = dx * dx + dy * dy;
+    const R = b.r + w.half;
+    if (d2 >= R * R) return;
+    const d = Math.sqrt(d2);
+    let nx, ny;
+    if (d < 1e-6) { const l = Math.sqrt(len2) || 1; nx = -ey / l; ny = ex / l; if (ny > 0) { nx = -nx; ny = -ny; } }
+    else { nx = dx / d; ny = dy / d; }
+    // il muro è "a": normale da muro a pallina, quindi invertiamo
+    this.resolveStatic(b, nx, ny, R - d);
+  }
+
+  resolveStatic(b, nx, ny, pen) {
+    // normale n punta dal muro verso la pallina
+    const vn = b.vx * nx + b.vy * ny;
+    if (vn < 0) {
+      const e = Math.abs(vn) > 0.6 * PPM * 0.15 ? this.restitution : 0;
+      const j = -(1 + e) * vn / b.invMass;      // impulso (kg·px/s)
+      b.vx += j * b.invMass * nx; b.vy += j * b.invMass * ny;
+      // attrito con rotazione: contatto in -r·n, velocità del punto = v + ω×(-r n)
+      const tx = -ny, ty = nx;
+      const vt = b.vx * tx + b.vy * ty - b.r * b.omega;
+      const den = b.invMass + b.r * b.r * b.invI;
+      let jt = -vt / den;
+      const maxF = this.friction * j;
+      if (jt > maxF) jt = maxF; else if (jt < -maxF) jt = -maxF;
+      b.vx += jt * b.invMass * tx; b.vy += jt * b.invMass * ty;
+      b.omega -= b.r * jt * b.invI;
+      // resistenza al rotolamento: smorza lo spin a contatto; l'attrito poi lo ri-accoppia alla velocità
+      if (this.friction > 0 && this.rolling > 0) b.omega *= 1 - 0.0001 * this.rolling;
+    }
+    const slop = 0.05, pct = 0.6;
+    const c = Math.max(pen - slop, 0) * pct;
+    b.x += c * nx; b.y += c * ny;
+  }
+
+  collideBounds(b) {
+    if (b.x - b.r < 0) this.resolveStatic(b, 1, 0, b.r - b.x);
+    if (b.x + b.r > this.w) this.resolveStatic(b, -1, 0, b.x + b.r - this.w);
+    if (b.y - b.r < 0) this.resolveStatic(b, 0, 1, b.r - b.y);
+    if (b.y + b.r > this.h) this.resolveStatic(b, 0, -1, b.y + b.r - this.h);
+  }
+
+  /* ---------- energia (Joule) ---------- */
+  energy() {
+    let ke = 0, pe = 0, el = 0;
+    const g = this.gravity;
+    for (const b of this.bodies) {
+      if (b.fixed) continue;
+      const v2 = (b.vx * b.vx + b.vy * b.vy) / (PPM * PPM);
+      ke += 0.5 * b.mass * v2 + 0.5 * b.inertia * b.omega * b.omega / (PPM * PPM);
+      pe += b.mass * g * (this.floorY - b.r - b.y) / PPM;
+    }
+    for (const l of this.links) {
+      if (l.rigid) continue;
+      const d = Math.hypot(l.b.x - l.a.x, l.b.y - l.a.y);
+      const k = (l.k != null ? l.k : this.stiffness);
+      const ext = (d - l.rest) / PPM;
+      el += 0.5 * k * ext * ext;
+    }
+    return { ke, pe, el, tot: ke + pe + el };
+  }
+
+  momentum() {
+    let px = 0, py = 0;
+    for (const b of this.bodies) if (!b.fixed) { px += b.mass * b.vx; py += b.mass * b.vy; }
+    return { px: px / PPM, py: py / PPM };
+  }
+
+  /* ---------- ricerca ---------- */
+  bodyAt(x, y, pad = 0) {
+    for (let i = this.bodies.length - 1; i >= 0; i--) {
+      const b = this.bodies[i];
+      if ((x - b.x) ** 2 + (y - b.y) ** 2 <= (b.r + pad) ** 2) return b;
+    }
+    return null;
+  }
+  wallAt(x, y, pad = 6) {
+    for (const w of this.walls) {
+      const ex = w.x2 - w.x1, ey = w.y2 - w.y1, len2 = ex * ex + ey * ey;
+      let t = len2 > 0 ? ((x - w.x1) * ex + (y - w.y1) * ey) / len2 : 0;
+      t = Math.max(0, Math.min(1, t));
+      if (Math.hypot(x - (w.x1 + ex * t), y - (w.y1 + ey * t)) <= w.half + pad) return w;
+    }
+    return null;
+  }
+  linkAt(x, y, pad = 6) {
+    for (const l of this.links) {
+      const ex = l.b.x - l.a.x, ey = l.b.y - l.a.y, len2 = ex * ex + ey * ey;
+      let t = len2 > 0 ? ((x - l.a.x) * ex + (y - l.a.y) * ey) / len2 : 0;
+      t = Math.max(0, Math.min(1, t));
+      if (Math.hypot(x - (l.a.x + ex * t), y - (l.a.y + ey * t)) <= pad) return l;
+    }
+    return null;
+  }
+}
+
+/* ---------- scene predefinite ---------- */
+const Scenes = {
+  cradle(world) {
+    world.clear();
+    const W = world.w, H = world.h;
+    const n = 5, r = Math.min(24, W / 40), L = Math.min(260, H * 0.42);
+    const cx = W / 2, top = H * 0.18;
+    const gap = 0.5;
+    for (let i = 0; i < n; i++) {
+      const x = cx + (i - (n - 1) / 2) * (2 * r + gap);
+      const pin = world.addBody(new Body(x, top, 5, 1, { fixed: true }));
+      let bx = x, by = top + L;
+      if (i === 0) { const ang = Math.PI / 3; bx = x - L * Math.sin(ang); by = top + L * Math.cos(ang); }
+      const ball = world.addBody(new Body(bx, by, r, 10, { color: '#e8eaf0' }));
+      world.addLink(new Link(pin, ball, { rigid: true, rest: L }));
+    }
+    // barra di sostegno
+    world.addWall(new Wall(cx - n * r - 40, top, cx + n * r + 40, top, 3));
+    return { restitution: 1, friction: 0, gravity: 9.81 };
+  },
+
+  incline(world) {
+    world.clear();
+    const W = world.w, H = world.h;
+    const x1 = W * 0.08, y1 = H * 0.30, x2 = W * 0.75, y2 = H * 0.86;
+    world.addWall(new Wall(x1, y1, x2, y2, 4));                 // rampa (~30-40°)
+    world.addWall(new Wall(x1, y1, x1, H, 4));                  // parete sinistra della rampa
+    world.addWall(new Wall(W * 0.92, H * 0.55, W * 0.92, H, 4)); // paletto a destra
+    // tre palline di massa diversa in cima
+    const ang = Math.atan2(y2 - y1, x2 - x1), nx = Math.sin(ang), ny = -Math.cos(ang);
+    const radii = [14, 22, 32], cols = ['#4fa3ff', '#ffb454', '#ff6b6b'];
+    radii.forEach((r, i) => {
+      const t = 0.06 + i * 0.09;
+      const px = x1 + (x2 - x1) * t, py = y1 + (y2 - y1) * t;
+      world.addBody(new Body(px + nx * (r + 4), py + ny * (r + 4), r, 10, { color: cols[i] }));
+    });
+    return { restitution: 0.3, friction: 0.25, gravity: 9.81 };
+  },
+
+  avalanche(world) {
+    world.clear();
+    const W = world.w, H = world.h;
+    // pendio spezzato con un salto e un cumulo finale
+    world.addWall(new Wall(0, H * 0.28, W * 0.45, H * 0.55, 4));
+    world.addWall(new Wall(W * 0.45, H * 0.55, W * 0.62, H * 0.62, 4));
+    world.addWall(new Wall(W * 0.72, H * 0.80, W, H * 0.92, 4));
+    world.addWall(new Wall(W * 0.85, H * 0.60, W * 0.85, H * 0.75, 4)); // scoglio
+    // ammasso di palline in alto a sinistra
+    const rng = mulberry32(7);
+    let count = 0;
+    for (let row = 0; row < 8 && count < 140; row++) {
+      for (let col = 0; col < 16 && count < 140; col++) {
+        const r = 6 + rng() * 9;
+        const x = 20 + col * 22 + rng() * 4, y = H * 0.02 + row * 22;
+        if (y + r > H * 0.28 + x * (H * 0.27) / (W * 0.45) - 8) continue;
+        const hue = 20 + rng() * 40;
+        world.addBody(new Body(x, y, r, 10, { color: `hsl(${hue} 80% ${55 + rng() * 15}%)` }));
+        count++;
+      }
+    }
+    return { restitution: 0.25, friction: 0.35, gravity: 9.81 };
+  },
+
+  collision(world, opts = {}) {
+    world.clear();
+    const centerMass = opts.centerMass != null ? opts.centerMass : 1;
+    const W = world.w, H = world.h;
+    // due rampe opposte che scendono verso il pavimento; al centro tre palline ferme
+    const L1 = [W * 0.02, H * 0.62, W * 0.30, H - 4], R1 = [W * 0.98, H * 0.56, W * 0.70, H - 4];   // ~42-45°: con attrito 0.4 rotolano senza slittare
+    world.addWall(new Wall(...L1, 4)); world.addWall(new Wall(...R1, 4));
+    const onRamp = (ramp, t, r, density, color) => {
+      const [x1, y1, x2, y2] = ramp, ang = Math.atan2(y2 - y1, x2 - x1);
+      let nx = Math.sin(ang), ny = -Math.cos(ang); if (ny > 0) { nx = -nx; ny = -ny; }
+      const px = x1 + (x2 - x1) * t, py = y1 + (y2 - y1) * t;
+      return world.addBody(new Body(px + nx * (r + 4), py + ny * (r + 4), r, density, { color }));
+    };
+    onRamp(L1, 0.10, 30, 12, '#ff6b6b');            // pesante da sinistra
+    onRamp(R1, 0.08, 16, 10, '#4fa3ff');            // leggera da destra
+    onRamp(R1, 0.30, 20, 10, '#4fd1c5');            // media da destra, più avanti
+    const cols = ['#ffb454', '#ffd166', '#ffb454'];
+    for (let i = 0; i < 3; i++) {
+      const b = world.addBody(new Body(W * 0.49 + (i - 1) * 44, H - 4 - 18, 18, 10, { color: cols[i], tag: 'center' }));
+      b.setMass(centerMass);
+    }
+    return { restitution: 0.6, friction: 0.4, gravity: 9.81 };
+  },
+
+  chain(world) {
+    world.clear();
+    const W = world.w, H = world.h;
+    const pin = world.addBody(new Body(W * 0.5, H * 0.12, 5, 1, { fixed: true }));
+    let prev = pin;
+    const n = 10, seg = Math.min(34, H * 0.05);
+    for (let i = 1; i <= n; i++) {
+      const b = world.addBody(new Body(W * 0.5 + i * seg, H * 0.12, 8, 10, { color: '#c792ea' }));
+      world.addLink(new Link(prev, b, { rigid: true, rest: seg }));
+      prev = b;
+    }
+    const heavy = world.addBody(new Body(W * 0.5 + (n + 1) * seg + 10, H * 0.12, 22, 20, { color: '#ffb454' }));
+    world.addLink(new Link(prev, heavy, { rigid: true, rest: seg + 14 }));
+    // pendolo a molla
+    const pin2 = world.addBody(new Body(W * 0.2, H * 0.12, 5, 1, { fixed: true }));
+    const bob = world.addBody(new Body(W * 0.2, H * 0.12 + 120, 18, 10, { color: '#4fd1c5' }));
+    world.addLink(new Link(pin2, bob, { rigid: false, rest: 120 }));
+    bob.vx = 250;
+    return { restitution: 0.5, friction: 0.2, gravity: 9.81 };
+  }
+};
+
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+if (typeof module !== 'undefined') module.exports = { World, Body, Wall, Link, Scenes, PPM };
+</script>
+
+<script id="ui">
+/* ================================================================
+   INTERFACCIA: canvas, input, grafico energia
+   ================================================================ */
+(function () {
+  const canvas = document.getElementById('world');
+  const ctx = canvas.getContext('2d');
+  const chart = document.getElementById('chart');
+  const cctx = chart.getContext('2d');
+  const hud = document.getElementById('hud');
+  const toastEl = document.getElementById('toast');
+  const $ = id => document.getElementById(id);
+
+  const world = new World(800, 600);
+  window.world = world;   // per debug/test
+  let dpr = 1;
+
+  const state = {
+    tool: 'ball', paused: false, speed: 1, showVel: true, showTrail: false, showInfo: true,
+    radius: 18, density: 10,
+    drag: null,            // {type:'new'|'grab'|'wall', ...}
+    linkFirst: null,       // prima pallina selezionata per molla/asta
+    mouse: { x: 0, y: 0, vx: 0, vy: 0, t: 0 },
+    hist: [],              // storico energia
+    fps: 0, frames: 0, fpsT: 0,
+  };
+  const MAXH = 300;
+
+  /* ---------- dimensioni ---------- */
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = Math.max(1, Math.round(rect.width * dpr));
+    canvas.height = Math.max(1, Math.round(rect.height * dpr));
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    world.resize(rect.width, rect.height);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  /* ---------- toast ---------- */
+  let toastT = 0;
+  function toast(msg) { toastEl.textContent = msg; toastEl.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.remove('show'), 2200); }
+
+  /* ---------- controlli ---------- */
+  function bindRange(id, outId, fmt, apply) {
+    const el = $(id), out = $(outId);
+    const upd = () => { const v = parseFloat(el.value); out.textContent = fmt(v); apply(v); };
+    el.addEventListener('input', upd); upd();
+    return upd;
+  }
+  const updGravity = bindRange('gravity', 'gravityOut', v => v.toFixed(2) + ' m/s²', v => { world.gravity = v; syncPresets(v); });
+  bindRange('rest', 'restOut', v => v.toFixed(2), v => world.restitution = v);
+  bindRange('fric', 'fricOut', v => v.toFixed(2), v => world.friction = v);
+  bindRange('roll', 'rollOut', v => v.toFixed(2), v => world.rolling = v);
+  bindRange('stiff', 'stiffOut', v => v.toFixed(0) + ' N/m', v => world.stiffness = v);
+  bindRange('damp', 'dampOut', v => v.toFixed(2), v => world.damping = v);
+  bindRange('speed', 'speedOut', v => v.toFixed(2) + '×', v => state.speed = v);
+  bindRange('radius', 'radiusOut', v => v.toFixed(0) + ' px', v => state.radius = v);
+  bindRange('density', 'densityOut', v => v.toFixed(0), v => state.density = v);
+
+  function syncPresets(g) {
+    document.querySelectorAll('[data-g]').forEach(b => b.classList.toggle('active', Math.abs(parseFloat(b.dataset.g) - g) < 1e-6));
+  }
+  document.querySelectorAll('[data-g]').forEach(b => b.addEventListener('click', () => { $('gravity').value = b.dataset.g; updGravity(); }));
+
+  document.querySelectorAll('#tools button').forEach(b => b.addEventListener('click', () => setTool(b.dataset.tool)));
+  function setTool(t) {
+    state.tool = t; state.linkFirst = null;
+    document.querySelectorAll('#tools button').forEach(b => b.classList.toggle('active', b.dataset.tool === t));
+    canvas.style.cursor = t === 'delete' ? 'not-allowed' : t === 'ball' ? 'crosshair' : 'pointer';
+  }
+
+  $('pauseBtn').addEventListener('click', togglePause);
+  function togglePause() { state.paused = !state.paused; $('pauseBtn').textContent = state.paused ? '▶ Riprendi' : '⏸ Pausa'; $('pauseBtn').classList.toggle('active', state.paused); }
+  $('stepBtn').addEventListener('click', () => { if (!state.paused) togglePause(); world.step(1 / 60); sampleEnergy(); });
+  $('clearBtn').addEventListener('click', () => { world.clear(); state.hist.length = 0; state.linkFirst = null; updateSceneRows(); toast('Scena svuotata'); });
+  $('showVel').addEventListener('change', e => state.showVel = e.target.checked);
+  $('showTrail').addEventListener('change', e => { state.showTrail = e.target.checked; if (!state.showTrail) world.bodies.forEach(b => b.trail.length = 0); });
+  $('showInfo').addEventListener('change', e => state.showInfo = e.target.checked);
+
+  bindRange('cmass', 'cmassOut', v => v.toFixed(1) + ' kg', v => {
+    state.centerMass = v;
+    for (const b of world.bodies) if (b.tag === 'center') b.setMass(v);
+  });
+  function updateSceneRows() { $('centerMassRow').hidden = !world.bodies.some(b => b.tag === 'center'); }
+
+  document.querySelectorAll('[data-scene]').forEach(b => b.addEventListener('click', () => loadScene(b.dataset.scene)));
+  function loadScene(name) {
+    const p = Scenes[name](world, { centerMass: state.centerMass });
+    state.hist.length = 0; state.linkFirst = null; state.drag = null;
+    updateSceneRows();
+    if (p) {
+      if (p.gravity != null) { $('gravity').value = p.gravity; updGravity(); }
+      if (p.restitution != null) { $('rest').value = p.restitution; $('rest').dispatchEvent(new Event('input')); }
+      if (p.friction != null) { $('fric').value = p.friction; $('fric').dispatchEvent(new Event('input')); }
+    }
+    if (state.paused) togglePause();
+    const names = { cradle: 'Pendolo di Newton', incline: 'Piano inclinato', avalanche: 'Valanga', collision: 'Scontro tra palline che rotolano', chain: 'Catena e pendolo a molla' };
+    toast('Scena: ' + names[name]);
+  }
+  window.loadScene = loadScene;
+
+  window.addEventListener('keydown', e => {
+    const tag = e.target.tagName, type = e.target.type;
+    if (tag === 'TEXTAREA' || (tag === 'INPUT' && type !== 'range' && type !== 'checkbox')) return;
+    if (e.code === 'Space') { e.preventDefault(); togglePause(); }
+    else if (e.key === 'v' || e.key === 'V') { $('showVel').checked = !$('showVel').checked; state.showVel = $('showVel').checked; }
+    else if (e.key === 'Escape') { state.linkFirst = null; state.drag = null; }
+    else if (e.key === 'Delete') { world.clear(); state.hist.length = 0; updateSceneRows(); }
+    else if (e.key === '1') setTool('ball'); else if (e.key === '2') setTool('spring');
+    else if (e.key === '3') setTool('rod'); else if (e.key === '4') setTool('delete');
+  });
+
+  /* ---------- mouse ---------- */
+  function pos(e) { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+  canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+  canvas.addEventListener('pointerdown', e => {
+    const p = pos(e);
+    canvas.setPointerCapture(e.pointerId);
+    state.mouse = { x: p.x, y: p.y, vx: 0, vy: 0, t: performance.now() };
+    if (e.button === 2) { state.drag = { type: 'wall', x0: p.x, y0: p.y, x: p.x, y: p.y }; return; }
+    if (e.button !== 0) return;
+    const hit = world.bodyAt(p.x, p.y, 2);
+    if (state.tool === 'delete') {
+      const target = hit || world.linkAt(p.x, p.y) || world.wallAt(p.x, p.y);
+      if (target instanceof Body) { world.removeBody(target); updateSceneRows(); }
+      else if (target instanceof Link) world.removeLink(target);
+      else if (target instanceof Wall) world.removeWall(target);
+      return;
+    }
+    if (state.tool === 'spring' || state.tool === 'rod') {
+      const rigid = state.tool === 'rod';
+      if (!state.linkFirst) {
+        if (hit && !hit.fixed) state.linkFirst = hit;
+        else toast('Prima clicca su una pallina');
+      } else {
+        let target = hit;
+        if (!target) target = world.addBody(new Body(p.x, p.y, 5, 1, { fixed: true }));
+        if (target === state.linkFirst) { toast('Scegli una pallina diversa'); return; }
+        world.addLink(new Link(state.linkFirst, target, { rigid }));
+        toast(rigid ? 'Asta creata' : 'Molla creata');
+        state.linkFirst = null;
+      }
+      return;
+    }
+    // strumento pallina
+    if (hit && !hit.fixed) {
+      state.drag = { type: 'grab', body: hit, ox: hit.x - p.x, oy: hit.y - p.y };
+    } else if (hit && hit.fixed) {
+      state.drag = { type: 'grab', body: hit, ox: 0, oy: 0 };
+    } else {
+      state.drag = { type: 'new', x0: p.x, y0: p.y, x: p.x, y: p.y };
+    }
+  });
+
+  canvas.addEventListener('pointermove', e => {
+    const p = pos(e), now = performance.now();
+    const dt = Math.max(1, now - state.mouse.t) / 1000;
+    const a = 0.5;
+    state.mouse.vx = state.mouse.vx * (1 - a) + ((p.x - state.mouse.x) / dt) * a;
+    state.mouse.vy = state.mouse.vy * (1 - a) + ((p.y - state.mouse.y) / dt) * a;
+    state.mouse.x = p.x; state.mouse.y = p.y; state.mouse.t = now;
+    const d = state.drag; if (!d) return;
+    if (d.type === 'new' || d.type === 'wall') { d.x = p.x; d.y = p.y; }
+    else if (d.type === 'grab') {
+      const b = d.body;
+      b.x = p.x + d.ox; b.y = p.y + d.oy; b.vx = 0; b.vy = 0; b.omega = 0; b.trail.length = 0;
+    }
+  });
+
+  canvas.addEventListener('pointerup', e => {
+    const p = pos(e), d = state.drag; state.drag = null;
+    if (!d) return;
+    if (d.type === 'wall') {
+      if (Math.hypot(p.x - d.x0, p.y - d.y0) >= 8) world.addWall(new Wall(d.x0, d.y0, p.x, p.y, 4));
+      return;
+    }
+    if (d.type === 'new') {
+      const k = 3;  // fattore lancio: 1 px di trascinamento = 3 px/s
+      const b = new Body(d.x0, d.y0, state.radius, state.density, { vx: (p.x - d.x0) * k, vy: (p.y - d.y0) * k, color: randColor() });
+      // non creare dentro un muro / fuori dai bordi
+      b.x = Math.min(Math.max(b.x, b.r), world.w - b.r); b.y = Math.min(Math.max(b.y, b.r), world.h - b.r);
+      world.addBody(b);
+      return;
+    }
+    if (d.type === 'grab') {
+      const b = d.body;
+      if (!b.fixed) {
+        // lancio con la velocità del mouse (se il mouse si è appena fermato, la velocità decade)
+        const age = (performance.now() - state.mouse.t);
+        const f = age > 80 ? 0 : 1;
+        b.vx = state.mouse.vx * f; b.vy = state.mouse.vy * f;
+      }
+    }
+  });
+  canvas.addEventListener('pointercancel', () => state.drag = null);
+
+  function randColor() { const h = Math.floor(Math.random() * 360); return `hsl(${h} 75% 62%)`; }
+
+  /* ---------- energia ---------- */
+  function sampleEnergy() {
+    const E = world.energy();
+    state.hist.push(E); if (state.hist.length > MAXH) state.hist.shift();
+    $('keOut').textContent = fmtJ(E.ke); $('peOut').textContent = fmtJ(E.pe);
+    $('elOut').textContent = fmtJ(E.el); $('totOut').textContent = fmtJ(E.tot);
+    return E;
+  }
+  function fmtJ(v) { return (Math.abs(v) >= 100 ? v.toFixed(0) : Math.abs(v) >= 10 ? v.toFixed(1) : v.toFixed(2)) + ' J'; }
+
+  function drawChart() {
+    const w = chart.width, h = chart.height, H = state.hist;
+    cctx.clearRect(0, 0, w, h);
+    cctx.fillStyle = '#12161f'; cctx.fillRect(0, 0, w, h);
+    if (H.length < 2) { cctx.fillStyle = '#556'; cctx.font = '12px system-ui'; cctx.fillText('in attesa di dati…', 8, 18); return; }
+    let max = 1e-9, min = 0;
+    for (const e of H) { max = Math.max(max, e.tot, e.ke, e.pe, e.el); min = Math.min(min, e.pe, e.tot); }
+    const pad = 4, span = (max - min) || 1;
+    const X = i => pad + (w - 2 * pad) * i / (MAXH - 1);
+    const Y = v => h - pad - (h - 2 * pad) * (v - min) / span;
+    // griglia
+    cctx.strokeStyle = '#242b38'; cctx.lineWidth = 1;
+    for (let i = 1; i < 4; i++) { const y = pad + (h - 2 * pad) * i / 4; cctx.beginPath(); cctx.moveTo(0, y); cctx.lineTo(w, y); cctx.stroke(); }
+    if (min < 0) { cctx.strokeStyle = '#3a4456'; cctx.beginPath(); cctx.moveTo(0, Y(0)); cctx.lineTo(w, Y(0)); cctx.stroke(); }
+    const off = MAXH - H.length;
+    const line = (key, color, width) => {
+      cctx.strokeStyle = color; cctx.lineWidth = width; cctx.beginPath();
+      for (let i = 0; i < H.length; i++) { const x = X(off + i), y = Y(H[i][key]); i ? cctx.lineTo(x, y) : cctx.moveTo(x, y); }
+      cctx.stroke();
+    };
+    line('ke', '#ff6b6b', 1.5); line('pe', '#4fd1c5', 1.5); line('el', '#c792ea', 1.5); line('tot', '#ffd166', 2.2);
+    cctx.fillStyle = '#8b95a7'; cctx.font = '10px system-ui';
+    cctx.fillText(fmtJ(max), 4, 11); cctx.fillText(fmtJ(min), 4, h - 4);
+  }
+
+  /* ---------- disegno ---------- */
+  function draw() {
+    const W = world.w, H = world.h;
+    ctx.clearRect(0, 0, W, H);
+    // griglia da 1 m
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let x = PPM; x < W; x += PPM) { ctx.moveTo(x, 0); ctx.lineTo(x, H); }
+    for (let y = H - PPM; y > 0; y -= PPM) { ctx.moveTo(0, y); ctx.lineTo(W, y); }
+    ctx.stroke();
+
+    // muri
+    ctx.lineCap = 'round';
+    for (const w of world.walls) {
+      ctx.strokeStyle = '#6b7a99'; ctx.lineWidth = w.half * 2;
+      ctx.beginPath(); ctx.moveTo(w.x1, w.y1); ctx.lineTo(w.x2, w.y2); ctx.stroke();
+      ctx.strokeStyle = '#aab6cf'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(w.x1, w.y1); ctx.lineTo(w.x2, w.y2); ctx.stroke();
+    }
+    // anteprima muro
+    const d = state.drag;
+    if (d && d.type === 'wall') {
+      ctx.strokeStyle = 'rgba(170,182,207,0.6)'; ctx.lineWidth = 8; ctx.setLineDash([6, 6]);
+      ctx.beginPath(); ctx.moveTo(d.x0, d.y0); ctx.lineTo(d.x, d.y); ctx.stroke(); ctx.setLineDash([]);
+    }
+
+    // scie
+    if (state.showTrail) {
+      for (const b of world.bodies) {
+        if (b.fixed || b.trail.length < 2) continue;
+        ctx.strokeStyle = b.color || '#fff'; ctx.globalAlpha = 0.35; ctx.lineWidth = 1.5; ctx.beginPath();
+        b.trail.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]));
+        ctx.stroke(); ctx.globalAlpha = 1;
+      }
+    }
+
+    // molle e aste
+    for (const l of world.links) drawLink(l);
+
+    // collegamento in corso
+    if (state.linkFirst) {
+      ctx.strokeStyle = 'rgba(79,163,255,0.7)'; ctx.setLineDash([4, 4]); ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(state.linkFirst.x, state.linkFirst.y); ctx.lineTo(state.mouse.x, state.mouse.y); ctx.stroke(); ctx.setLineDash([]);
+      ctx.strokeStyle = '#4fa3ff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(state.linkFirst.x, state.linkFirst.y, state.linkFirst.r + 4, 0, Math.PI * 2); ctx.stroke();
+    }
+
+    // palline
+    for (const b of world.bodies) {
+      if (b.fixed) {
+        ctx.fillStyle = '#aab6cf'; ctx.beginPath(); ctx.arc(b.x, b.y, 5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#0f1218'; ctx.beginPath(); ctx.arc(b.x, b.y, 2, 0, Math.PI * 2); ctx.fill();
+        continue;
+      }
+      const col = b.color || '#e8eaf0';
+      const grad = ctx.createRadialGradient(b.x - b.r * 0.35, b.y - b.r * 0.35, b.r * 0.1, b.x, b.y, b.r);
+      grad.addColorStop(0, '#ffffff'); grad.addColorStop(0.25, col); grad.addColorStop(1, shade(col));
+      ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.lineWidth = 1; ctx.stroke();
+      // indicatore di rotazione: raggio + puntino sul bordo
+      { const ca = Math.cos(b.angle), sa = Math.sin(b.angle);
+        ctx.strokeStyle = 'rgba(0,0,0,0.45)'; ctx.lineWidth = Math.max(1, b.r * 0.08);
+        ctx.beginPath(); ctx.moveTo(b.x, b.y); ctx.lineTo(b.x + ca * b.r * 0.9, b.y + sa * b.r * 0.9); ctx.stroke();
+        ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.beginPath(); ctx.arc(b.x + ca * b.r * 0.72, b.y + sa * b.r * 0.72, Math.max(1.5, b.r * 0.14), 0, Math.PI * 2); ctx.fill(); }
+      if (state.showInfo && b.r >= 12) {
+        ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.font = `${Math.max(9, Math.min(12, b.r * 0.6))}px system-ui`; ctx.textAlign = 'center';
+        ctx.fillText(b.mass.toFixed(1) + ' kg', b.x, b.y + (b.r >= 22 ? -2 : 4));
+        if (b.r >= 22) ctx.fillText(b.omega.toFixed(1) + ' rad/s', b.x, b.y + 10);
+        ctx.textAlign = 'left';
+      }
+    }
+
+    // vettori velocità
+    if (state.showVel) {
+      const labels = state.showInfo && world.bodies.length <= 40;   // con molti corpi le etichette sono solo rumore
+      for (const b of world.bodies) {
+        if (b.fixed) continue;
+        const s = Math.hypot(b.vx, b.vy); if (s < 5) continue;
+        const scale = 0.25; // 1 m/s = 25 px
+        arrow(b.x, b.y, b.x + b.vx * scale, b.y + b.vy * scale, '#ffd166');
+        if (labels && b.r >= 12) {
+          ctx.fillStyle = '#ffd166'; ctx.font = '10px system-ui';
+          ctx.fillText((s / PPM).toFixed(2) + ' m/s', b.x + b.vx * scale + 4, b.y + b.vy * scale - 4);
+        }
+      }
+    }
+
+    // anteprima lancio
+    if (d && d.type === 'new') {
+      const k = 3, vx = (d.x - d.x0) * k, vy = (d.y - d.y0) * k;
+      ctx.globalAlpha = 0.5; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(d.x0, d.y0, state.radius, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
+      if (Math.hypot(vx, vy) > 1) {
+        arrow(d.x0, d.y0, d.x0 + vx * 0.25, d.y0 + vy * 0.25, '#4fa3ff');
+        // traiettoria prevista
+        ctx.fillStyle = 'rgba(79,163,255,0.5)';
+        const g = world.gravity * PPM;
+        for (let t = 0.1; t < 2.5; t += 0.1) {
+          const x = d.x0 + vx * t, y = d.y0 + vy * t + 0.5 * g * t * t;
+          if (x < 0 || x > W || y > H) break;
+          ctx.beginPath(); ctx.arc(x, y, 2, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.fillStyle = '#4fa3ff'; ctx.font = '11px system-ui';
+        ctx.fillText((Math.hypot(vx, vy) / PPM).toFixed(2) + ' m/s', d.x0 + 14, d.y0 - 14);
+      }
+    }
+  }
+
+  function drawLink(l) {
+    const a = l.a, b = l.b;
+    if (l.rigid) {
+      ctx.strokeStyle = '#aab6cf'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+      return;
+    }
+    const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1, nx = -dy / d, ny = dx / d;
+    const coils = Math.max(4, Math.round(l.rest / 14)), amp = 6;
+    const ext = d / l.rest;
+    ctx.strokeStyle = ext > 1.25 ? '#ff6b6b' : ext < 0.8 ? '#4fd1c5' : '#c792ea'; ctx.lineWidth = 1.8;
+    ctx.beginPath(); ctx.moveTo(a.x, a.y);
+    for (let i = 1; i < coils * 2; i++) {
+      const t = i / (coils * 2), s = (i % 2 ? 1 : -1) * amp * (t > 0.08 && t < 0.92 ? 1 : 0);
+      ctx.lineTo(a.x + dx * t + nx * s, a.y + dy * t + ny * s);
+    }
+    ctx.lineTo(b.x, b.y); ctx.stroke();
+  }
+
+  function arrow(x1, y1, x2, y2, color) {
+    const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy); if (L < 1) return;
+    const ux = dx / L, uy = dy / L, hs = Math.min(8, L * 0.4);
+    ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - ux * hs - uy * hs * 0.5, y2 - uy * hs + ux * hs * 0.5);
+    ctx.lineTo(x2 - ux * hs + uy * hs * 0.5, y2 - uy * hs - ux * hs * 0.5);
+    ctx.closePath(); ctx.fill();
+  }
+
+  function shade(col) {
+    // scurisce un colore hsl() o hex in modo approssimato
+    const m = /hsl\(\s*([\d.]+)\s+([\d.]+)%\s+([\d.]+)%/.exec(col);
+    if (m) return `hsl(${m[1]} ${m[2]}% ${Math.max(10, m[3] * 0.45)}%)`;
+    if (col[0] === '#' && col.length === 7) {
+      const r = parseInt(col.slice(1, 3), 16), g = parseInt(col.slice(3, 5), 16), b = parseInt(col.slice(5, 7), 16);
+      return `rgb(${r * 0.45 | 0},${g * 0.45 | 0},${b * 0.45 | 0})`;
+    }
+    return '#333';
+  }
+
+  /* ---------- loop ---------- */
+  let last = performance.now(), acc = 0;
+  const FIXED = 1 / 120;
+  function frame(now) {
+    let real = (now - last) / 1000; last = now;
+    if (real > 0.1) real = 0.1;
+    state.frames++; if (now - state.fpsT > 500) { state.fps = state.frames * 1000 / (now - state.fpsT); state.frames = 0; state.fpsT = now; }
+
+    const grabbed = state.drag && state.drag.type === 'grab' ? state.drag.body : null;
+    if (!state.paused) {
+      acc += real * state.speed;
+      let n = 0;
+      while (acc >= FIXED && n < 40) {
+        if (grabbed) { grabbed.vx = 0; grabbed.vy = 0; }
+        const gx = grabbed ? grabbed.x : 0, gy = grabbed ? grabbed.y : 0;
+        world.step(FIXED);
+        if (grabbed) { grabbed.x = gx; grabbed.y = gy; grabbed.vx = 0; grabbed.vy = 0; grabbed.omega = 0; }
+        acc -= FIXED; n++;
+      }
+      if (n >= 40) acc = 0;
+      if (state.showTrail) for (const b of world.bodies) { if (b.fixed) continue; b.trail.push([b.x, b.y]); if (b.trail.length > 60) b.trail.shift(); }
+      sampleEnergy();
+    }
+    draw(); drawChart();
+    const E = state.hist.length ? state.hist[state.hist.length - 1] : { tot: 0 };
+    hud.textContent = `t = ${world.time.toFixed(2)} s   corpi: ${world.bodies.filter(b => !b.fixed).length}   muri: ${world.walls.length}   legami: ${world.links.length}   ${state.fps.toFixed(0)} fps` +
+      (state.paused ? '\n⏸ IN PAUSA' : state.speed !== 1 ? `\n⏱ ${state.speed.toFixed(2)}×` : '') +
+      (state.linkFirst ? '\n→ scegli la seconda pallina o clicca nel vuoto per un perno' : '');
+    requestAnimationFrame(frame);
+  }
+
+  // scena iniziale
+  loadScene('cradle');
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
