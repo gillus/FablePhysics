@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Guida per studenti</title>
+<!-- Sorgente della guida per studenti. Il PDF si rigenera con:
+     google-chrome --headless=new --no-pdf-header-footer --print-to-pdf=docs/guida-studenti.pdf docs/guida-studenti.html -->
+<style>
+  @page { size: A4; margin: 12mm 14mm 12mm; }
+  :root {
+    --ink: #1d2433; --muted: #5b6475; --line: #d9dee8;
+    --blue: #2f7de1; --orange: #e8891c; --red: #d9534f; --green: #2a9d74; --purple: #8a5cc2;
+    --soft-blue: #eaf2fd; --soft-orange: #fdf1e3; --soft-green: #e6f5ef; --soft-purple: #f2ecfa;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "DejaVu Sans", "Liberation Sans", Arial, sans-serif; color: var(--ink); font-size: 10pt; line-height: 1.42; background: #fff; }
+  .page { break-after: page; }
+  .page:last-child { break-after: auto; }
+  h1 { font-size: 26pt; line-height: 1.15; margin: 0 0 6mm; }
+  h2 { font-size: 16pt; margin: 0 0 3mm; padding-bottom: 1.5mm; border-bottom: 2px solid var(--blue); }
+  h3 { font-size: 11.5pt; margin: 3.5mm 0 1mm; color: var(--blue); }
+  p { margin: 0 0 2mm; }
+  ul, ol { margin: 0 0 2.5mm; padding-left: 6mm; }
+  li { margin-bottom: 1mm; }
+  b { font-weight: 700; }
+  .muted { color: var(--muted); }
+  .small { font-size: 9pt; }
+  .box { border-radius: 3mm; padding: 3mm 4mm; margin: 3mm 0; break-inside: avoid; }
+  .box > :last-child { margin-bottom: 0; }
+  .box-title { font-weight: 700; margin-bottom: 1mm; }
+  .idea { background: var(--soft-blue); border-left: 4px solid var(--blue); }
+  .curioso { background: var(--soft-purple); border-left: 4px solid var(--purple); }
+  .attenzione { background: var(--soft-orange); border-left: 4px solid var(--orange); }
+  .row { display: flex; gap: 5mm; align-items: flex-start; }
+  .row > .grow { flex: 1; }
+  figure { margin: 0; text-align: center; break-inside: avoid; }
+  figcaption { font-size: 8.5pt; color: var(--muted); margin-top: 1mm; }
+  svg text { font-family: "DejaVu Sans", Arial, sans-serif; }
+  table { border-collapse: collapse; width: 100%; margin: 1.5mm 0 2.5mm; font-size: 9.5pt; break-inside: avoid; }
+  th, td { border: 1px solid var(--line); padding: 1.1mm 2.2mm; text-align: left; vertical-align: top; }
+  th { background: #f3f5f9; }
+  .key { display: inline-block; border: 1px solid #aab2c0; border-bottom-width: 2px; border-radius: 1.5mm; padding: 0 1.6mm; font-size: 9pt; background: #fafbfc; white-space: nowrap; }
+  .btn { display: inline-block; border-radius: 1.5mm; padding: 0 2mm; font-size: 9pt; background: #e9edf3; white-space: nowrap; }
+
+  /* copertina */
+  .cover { display: flex; flex-direction: column; min-height: 268mm; }
+  .cover .tag { color: var(--blue); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-size: 10pt; margin-bottom: 3mm; }
+  .cover .sub { font-size: 13pt; color: var(--muted); margin-bottom: 8mm; }
+  .cover .art { margin: 4mm 0 8mm; }
+  .steps { display: flex; gap: 4mm; margin: 4mm 0; }
+  .step { flex: 1; border: 1px solid var(--line); border-radius: 3mm; padding: 3mm; text-align: center; }
+  .step .n { display: inline-block; width: 8mm; height: 8mm; line-height: 8mm; border-radius: 50%; color: #fff; font-weight: 700; margin-bottom: 1.5mm; }
+  .cover .bottom { margin-top: auto; font-size: 9.5pt; color: var(--muted); border-top: 1px solid var(--line); padding-top: 3mm; }
+
+  /* esperimenti */
+  .exp { border: 1.5px solid var(--line); border-radius: 3mm; padding: 2.5mm 4mm; margin: 0 0 3mm; break-inside: avoid; }
+  .exp h3 { margin-top: 0; }
+  .exp .lab { font-weight: 700; display: inline-block; min-width: 20mm; }
+  .write { border-bottom: 1px dotted #9aa3b2; height: 6.5mm; }
+  .choice { display: inline-block; margin-right: 5mm; }
+  .choice::before { content: ""; display: inline-block; width: 3mm; height: 3mm; border: 1px solid var(--ink); border-radius: .6mm; margin-right: 1.5mm; vertical-align: -0.3mm; }
+  .gloss dt { font-weight: 700; margin-top: 2mm; }
+  .gloss dd { margin: 0 0 0 5mm; }
+</style>
+</head>
+<body>
+
+<!-- ============ 1. COPERTINA ============ -->
+<section class="page cover">
+  <div class="tag">Guida per studenti · Scuola secondaria di primo grado</div>
+  <h1>Il Laboratorio di Fisica 2D</h1>
+  <div class="sub">Palline, rampe, molle e pendoli: esperimenti di fisica sullo schermo del computer</div>
+
+  <div class="art">
+    <svg viewBox="0 0 600 200" width="100%" height="62mm" aria-hidden="true">
+      <rect x="0" y="0" width="600" height="200" rx="14" fill="#15191f"/>
+      <!-- pendolo di Newton -->
+      <line x1="40" y1="40" x2="220" y2="40" stroke="#9aa6bb" stroke-width="4"/>
+      <line x1="90" y1="40" x2="50" y2="112" stroke="#c9d1de" stroke-width="2"/>
+      <circle cx="50" cy="118" r="14" fill="#e8eaf0"/>
+      <g stroke="#c9d1de" stroke-width="2"><line x1="120" y1="40" x2="120" y2="120"/><line x1="148" y1="40" x2="148" y2="120"/><line x1="176" y1="40" x2="176" y2="120"/></g>
+      <circle cx="120" cy="134" r="14" fill="#e8eaf0"/><circle cx="148" cy="134" r="14" fill="#e8eaf0"/><circle cx="176" cy="134" r="14" fill="#e8eaf0"/>
+      <!-- rampa -->
+      <line x1="260" y1="60" x2="430" y2="175" stroke="#9aa6bb" stroke-width="6" stroke-linecap="round"/>
+      <circle cx="300" cy="72" r="12" fill="#4fa3ff"/>
+      <circle cx="345" cy="99" r="17" fill="#ffb454"/>
+      <circle cx="393" cy="128" r="22" fill="#ff6b6b"/>
+      <path d="M404 96 a 14 14 0 0 1 12 18" fill="none" stroke="#fff" stroke-width="2"/>
+      <!-- molla -->
+      <line x1="510" y1="28" x2="560" y2="28" stroke="#9aa6bb" stroke-width="4"/>
+      <circle cx="535" cy="28" r="4" fill="#fff"/>
+      <polyline points="535,32 525,42 545,52 525,62 545,72 525,82 545,92 525,102 535,110" fill="none" stroke="#ffb454" stroke-width="2.5"/>
+      <circle cx="535" cy="126" r="16" fill="#4fd1c5"/>
+      <line x1="560" y1="126" x2="590" y2="126" stroke="#ffd166" stroke-width="3"/>
+      <polygon points="590,120 600,126 590,132" fill="#ffd166"/>
+      <line x1="0" y1="190" x2="600" y2="190" stroke="#2c323d" stroke-width="2"/>
+    </svg>
+  </div>
+
+  <h2 style="border:0; padding:0;">Che cos'è?</h2>
+  <p>È un piccolo <b>laboratorio virtuale</b> che funziona nel browser (Chrome, Firefox, Edge…). Puoi creare palline, lanciarle, farle rimbalzare, farle rotolare giù da una rampa, appenderle a molle e fili. Il computer calcola il loro movimento seguendo le <b>leggi della fisica</b>, e puoi cambiare le regole del mondo: per esempio portare tutto sulla Luna o togliere l'attrito.</p>
+  <p>Come si apre: <b>gillus.github.io/FablePhysics/fisica.html</b>, oppure il file <b>fisica.html</b> che ti dà l'insegnante.</p>
+
+  <h3>Come usare questa guida</h3>
+  <p>Ogni esperimento segue tre passi, come fanno gli scienziati veri:</p>
+  <div class="steps">
+    <div class="step"><div class="n" style="background:var(--blue)">1</div><br><b>Prevedi</b><br><span class="small muted">Prima di provare, scrivi cosa pensi che succederà.</span></div>
+    <div class="step"><div class="n" style="background:var(--orange)">2</div><br><b>Osserva</b><br><span class="small muted">Fai l'esperimento e guarda con attenzione.</span></div>
+    <div class="step"><div class="n" style="background:var(--green)">3</div><br><b>Spiega</b><br><span class="small muted">Avevi ragione? Se no, perché? Sbagliare una previsione è normale: è così che si impara.</span></div>
+  </div>
+
+  <div class="bottom">Contenuto: comandi (p. 2) · idee di fisica (pp. 3–5) · esperimenti guidati (pp. 6–7) · parole da sapere (p. 8)</div>
+</section>
+
+<!-- ============ 2. COMANDI ============ -->
+<section class="page">
+  <h2>1. I comandi</h2>
+  <p>Lo schermo è diviso in due parti: a sinistra c'è il <b>mondo</b>, dove si muovono gli oggetti; a destra c'è il <b>pannello di controllo</b>, con pulsanti e cursori.</p>
+
+  <h3>Con il mouse</h3>
+  <table>
+    <tr><th style="width:38%">Cosa fai</th><th>Cosa succede</th></tr>
+    <tr><td><b>Clic sinistro</b> nel vuoto</td><td>Crei una pallina ferma, che poi cade.</td></tr>
+    <tr><td><b>Clic sinistro e trascina</b> nel vuoto</td><td>Crei una pallina e la <b>lanci</b>. La freccia mostra la direzione e la velocità del lancio: più la tiri lunga, più veloce parte.</td></tr>
+    <tr><td><b>Trascina</b> una pallina che c'è già</td><td>La sposti e poi la rilanci.</td></tr>
+    <tr><td><b>Clic destro e trascina</b></td><td>Disegni un <b>muro</b> o una <b>rampa</b>.</td></tr>
+  </table>
+
+  <h3>Gli strumenti</h3>
+  <table>
+    <tr><th style="width:22%">Pulsante</th><th>A cosa serve</th></tr>
+    <tr><td><span class="btn">Pallina</span></td><td>Lo strumento normale: crea e lancia palline. Con i cursori <b>Raggio</b> e <b>Densità</b> scegli quanto è grande e di che "materiale" è fatta la prossima pallina.</td></tr>
+    <tr><td><span class="btn">Molla</span></td><td>Clic su una pallina, poi su un'altra: le colleghi con una molla. Se il secondo clic è nel vuoto, la molla si aggancia a un <b>perno fisso</b>.</td></tr>
+    <tr><td><span class="btn">Asta</span></td><td>Come la molla, ma rigida: non si allunga mai. Serve per costruire <b>pendoli</b> e <b>catene</b>.</td></tr>
+    <tr><td><span class="btn">Elimina</span></td><td>Clic su una pallina, un muro, una molla o un perno per cancellarlo.</td></tr>
+  </table>
+
+  <h3>Il pannello di controllo</h3>
+  <table>
+    <tr><th style="width:22%">Sezione</th><th>Cosa contiene</th></tr>
+    <tr><td><b>Mondo</b></td><td>Le "regole" del mondo: <b>gravità</b> (con i pulsanti Luna, Terra, Giove, Zero-g), <b>elasticità</b>, <b>attrito</b>, resistenza al rotolamento, rigidità e smorzamento delle molle.</td></tr>
+    <tr><td><b>Tempo</b></td><td><span class="btn">Pausa</span> ferma tutto, <span class="btn">Passo</span> avanza di un istante alla volta, <span class="btn">Svuota</span> cancella tutto. Il <b>Rallentatore</b> fa andare la scena al rallentatore.</td></tr>
+    <tr><td><b>Visualizza</b></td><td>Mostra le <b>frecce della velocità</b>, le <b>scie</b> (la traccia lasciata da ogni pallina) e i dati di ogni pallina: massa, velocità, rotazione.</td></tr>
+    <tr><td><b>Energia</b></td><td>Un grafico che mostra, istante per istante, quanta energia c'è nel mondo.</td></tr>
+    <tr><td><b>Scene pronte</b></td><td>Esperimenti già costruiti: Pendolo di Newton, Piano inclinato, Valanga, Scontro, Catena.</td></tr>
+  </table>
+
+  <h3>Con la tastiera</h3>
+  <p><span class="key">Spazio</span> pausa / riprendi &nbsp;·&nbsp; <span class="key">V</span> mostra o nasconde le frecce &nbsp;·&nbsp; <span class="key">Esc</span> annulla &nbsp;·&nbsp; <span class="key">Canc</span> svuota la scena &nbsp;·&nbsp; <span class="key">1</span> <span class="key">2</span> <span class="key">3</span> <span class="key">4</span> cambiano strumento (pallina, molla, asta, elimina)</p>
+
+  <div class="box attenzione"><div class="box-title">Un consiglio</div>
+    <p>Se la scena diventa troppo confusa, premi <span class="key">Canc</span> e ricomincia. Non puoi rompere niente!</p>
+  </div>
+</section>
+
+<!-- ============ 3. IDEE: MISURE, MASSA, VELOCITÀ, GRAVITÀ ============ -->
+<section class="page">
+  <h2>2. Le idee di fisica</h2>
+
+  <h3>Misure e scala</h3>
+  <p>Sullo schermo le distanze si misurano in <b>pixel</b>, i puntini che formano l'immagine. Nel laboratorio vale questa regola: <b>100 pixel = 1 metro</b>. Una pallina con raggio 18 pixel ha quindi un diametro di 36 cm. Lo sfondo del mondo ha una griglia leggera: <b>ogni quadretto è 1 metro × 1 metro</b>. Le masse sono in <b>chilogrammi (kg)</b>, le velocità in <b>metri al secondo (m/s)</b>.</p>
+
+  <h3>Massa e densità</h3>
+  <div class="row">
+    <div class="grow">
+      <p>La <b>massa</b> dice quanta "materia" c'è in un oggetto. Nel laboratorio la massa di una pallina dipende da due cose:</p>
+      <ul>
+        <li>quanto è <b>grande</b> (cursore <i>Raggio</i>);</li>
+        <li>di che <b>materiale</b> è fatta (cursore <i>Densità</i>): una pallina di legno e una di ferro grandi uguali hanno masse diverse.</li>
+      </ul>
+      <p>Raddoppiando il raggio, la massa diventa <b>4 volte</b> più grande, perché conta la superficie del disco.</p>
+    </div>
+    <figure style="width:62mm">
+      <svg viewBox="0 0 220 110" width="62mm">
+        <circle cx="45" cy="60" r="20" fill="#4fa3ff"/>
+        <circle cx="150" cy="60" r="40" fill="#4fa3ff"/>
+        <text x="45" y="104" font-size="11" text-anchor="middle">raggio r</text>
+        <text x="150" y="112" font-size="11" text-anchor="middle">raggio 2r</text>
+        <text x="45" y="64" font-size="10" text-anchor="middle" fill="#fff">1 kg</text>
+        <text x="150" y="64" font-size="12" text-anchor="middle" fill="#fff">4 kg</text>
+      </svg>
+      <figcaption>Stesso materiale, raggio doppio: massa 4 volte più grande.</figcaption>
+    </figure>
+  </div>
+
+  <h3>Velocità</h3>
+  <div class="row">
+    <div class="grow">
+      <p>La <b>velocità</b> dice quanto spazio percorre un oggetto in un secondo, ma anche <b>in che direzione</b> va. Per questo la disegniamo con una <b>freccia</b>, che i fisici chiamano <b>vettore</b>:</p>
+      <ul>
+        <li>la <b>direzione</b> della freccia è la direzione del moto;</li>
+        <li>la <b>lunghezza</b> della freccia indica quanto va veloce.</li>
+      </ul>
+      <p>Attiva <i>Vettori velocità</i> (o premi <span class="key">V</span>) per vedere le frecce su ogni pallina.</p>
+    </div>
+    <figure style="width:62mm">
+      <svg viewBox="0 0 220 110" width="62mm">
+        <circle cx="45" cy="40" r="14" fill="#ffb454"/>
+        <line x1="59" y1="40" x2="100" y2="40" stroke="#d98a10" stroke-width="3"/><polygon points="100,34 110,40 100,46" fill="#d98a10"/>
+        <text x="80" y="28" font-size="10" text-anchor="middle">lenta</text>
+        <circle cx="45" cy="85" r="14" fill="#ffb454"/>
+        <line x1="59" y1="85" x2="190" y2="85" stroke="#d98a10" stroke-width="3"/><polygon points="190,79 200,85 190,91" fill="#d98a10"/>
+        <text x="130" y="73" font-size="10" text-anchor="middle">veloce</text>
+      </svg>
+      <figcaption>Freccia più lunga = pallina più veloce.</figcaption>
+    </figure>
+  </div>
+
+  <h3>La gravità</h3>
+  <div class="row">
+    <div class="grow">
+      <p>La <b>gravità</b> è la forza che attira gli oggetti verso il basso. Si misura con l'<b>accelerazione di gravità</b> <i>g</i>: ogni secondo, un oggetto in caduta libera aumenta la sua velocità di <i>g</i> metri al secondo.</p>
+      <table>
+        <tr><th>Pulsante</th><th><i>g</i> (m/s²)</th><th>Rispetto alla Terra</th></tr>
+        <tr><td>Luna</td><td>1,62</td><td>circa 6 volte più debole</td></tr>
+        <tr><td>Terra</td><td>9,81</td><td>—</td></tr>
+        <tr><td>Giove</td><td>24,79</td><td>circa 2,5 volte più forte</td></tr>
+        <tr><td>Zero-g</td><td>0</td><td>niente gravità, come in una stazione spaziale</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="box curioso"><div class="box-title">La scoperta di Galileo</div>
+    <p>Se lasci cadere dalla stessa altezza una pallina leggera e una pesante, quale arriva prima a terra? Molti pensano "la pesante". Galileo Galilei, circa 400 anni fa, capì che <b>senza l'aria cadono insieme</b>. Nel laboratorio l'aria non c'è: provalo tu (esperimento A).</p>
+  </div>
+</section>
+
+<!-- ============ 4. IDEE: URTI, ATTRITO ============ -->
+<section class="page">
+  <h3 style="margin-top:0">Urti ed elasticità</h3>
+  <div class="row">
+    <div class="grow">
+      <p>Quando una pallina sbatte contro il pavimento o contro un'altra pallina, parte del suo movimento può "perdersi" (diventa calore, rumore, deformazione). L'<b>elasticità</b> dice quanto movimento resta dopo l'urto:</p>
+      <ul>
+        <li><b>1</b>: urto <b>perfettamente elastico</b>. La pallina rimbalza fino all'altezza da cui era partita. Nella realtà non esiste, ma una super-palla ci va vicino.</li>
+        <li><b>0</b>: urto <b>anelastico</b>. La pallina non rimbalza per niente, come una pallina di plastilina.</li>
+        <li>Nel mezzo, per esempio <b>0,8</b>: rimbalza, ma ogni volta un po' meno. È come una palla da basket.</li>
+      </ul>
+    </div>
+    <figure style="width:70mm">
+      <svg viewBox="0 0 250 170" width="70mm">
+        <line x1="10" y1="150" x2="240" y2="150" stroke="#1d2433" stroke-width="2"/>
+        <line x1="10" y1="30" x2="240" y2="30" stroke="#9aa3b2" stroke-dasharray="4 4"/>
+        <text x="12" y="24" font-size="9" fill="#5b6475">partenza: 2 m</text>
+        <g font-size="10" text-anchor="middle">
+          <rect x="30" y="30" width="30" height="120" fill="#2a9d74"/><text x="45" y="165">1</text><text x="45" y="45" fill="#fff" font-size="9">2 m</text>
+          <rect x="85" y="73" width="30" height="77" fill="#2f7de1"/><text x="100" y="165">0,8</text><text x="100" y="88" fill="#fff" font-size="8">1,28 m</text>
+          <rect x="140" y="120" width="30" height="30" fill="#e8891c"/><text x="155" y="165">0,5</text><text x="155" y="116" font-size="8">0,5 m</text>
+          <rect x="195" y="148" width="30" height="2" fill="#d9534f"/><text x="210" y="165">0</text><text x="210" y="142" font-size="8">0 m</text>
+        </g>
+      </svg>
+      <figcaption>Altezza del primo rimbalzo di una pallina lasciata cadere da 2 m, con quattro valori di elasticità (misurata nel laboratorio).</figcaption>
+    </figure>
+  </div>
+
+  <h3>La quantità di moto</h3>
+  <p>Negli urti tra palline c'è una grandezza che non cambia mai: la <b>quantità di moto</b> totale, cioè massa × velocità, sommata su tutte le palline. Se una pallina pesante urta una leggera, la leggera schizza via veloce. Se una leggera urta una pesante, rimbalza indietro e la pesante si muove appena. Nel <b>Pendolo di Newton</b> la pallina che arriva si ferma e passa tutto il suo movimento all'ultima della fila.</p>
+
+  <h3>Attrito e rotolamento</h3>
+  <div class="row">
+    <div class="grow">
+      <p>L'<b>attrito</b> è la forza che si oppone allo <b>strisciare</b> di una superficie sull'altra. Sul ghiaccio l'attrito è piccolo, sulla gomma è grande.</p>
+      <p>Nel laboratorio le palline possono anche <b>girare su se stesse</b>. È proprio l'attrito che le fa rotolare: senza attrito (cursore a 0) una pallina su una rampa <b>scivola</b> senza girare, come un cubetto di ghiaccio. Con abbastanza attrito, invece, <b>rotola</b> come una ruota.</p>
+      <p>La <b>resistenza al rotolamento</b> rallenta pian piano una pallina che rotola, come succede a un pallone sull'erba. A 0, una pallina su un pavimento piatto rotola per sempre.</p>
+    </div>
+    <figure style="width:62mm">
+      <svg viewBox="0 0 220 150" width="62mm">
+        <line x1="10" y1="30" x2="210" y2="135" stroke="#1d2433" stroke-width="4" stroke-linecap="round"/>
+        <circle cx="95" cy="54" r="22" fill="#ff6b6b"/>
+        <line x1="95" y1="54" x2="95" y2="36" stroke="#fff" stroke-width="2"/>
+        <path d="M122 36 a 30 30 0 0 1 10 26" fill="none" stroke="#2f7de1" stroke-width="2.5"/>
+        <polygon points="127,60 132,70 137,58" fill="#2f7de1"/>
+        <text x="150" y="40" font-size="10" fill="#2f7de1">gira</text>
+        <line x1="112" y1="96" x2="80" y2="80" stroke="#2a9d74" stroke-width="2.5"/>
+        <polygon points="80,74 70,76 78,86" fill="#2a9d74"/>
+        <text x="60" y="110" font-size="10" fill="#2a9d74">attrito</text>
+      </svg>
+      <figcaption>L'attrito nel punto di contatto fa girare la pallina: rotola invece di strisciare.</figcaption>
+    </figure>
+  </div>
+
+  <div class="box idea"><div class="box-title">Idea chiave</div>
+    <p>Nel laboratorio le "regole del mondo" (gravità, elasticità, attrito) si cambiano con i cursori. Cambiane <b>una sola alla volta</b>: solo così capisci che effetto ha. Gli scienziati lo chiamano <b>controllo delle variabili</b>.</p>
+  </div>
+</section>
+
+<!-- ============ 5. IDEE: MOLLE, PENDOLI, ENERGIA ============ -->
+<section class="page">
+  <h3 style="margin-top:0">Le molle</h3>
+  <div class="row">
+    <div class="grow">
+      <p>Una molla ha una sua <b>lunghezza di riposo</b>. Se la allunghi tira indietro, se la schiacci spinge in fuori. <b>Più la deformi, più forte reagisce</b>: se la allunghi il doppio, tira il doppio. È la <b>legge di Hooke</b>.</p>
+      <p>La <b>rigidità</b> (in N/m, newton per metro) dice quanto è "dura" la molla: una molla rigida si allunga poco e fa oscillare la pallina velocemente. Lo <b>smorzamento</b> frena le oscillazioni, che così si spengono piano piano.</p>
+    </div>
+    <figure style="width:58mm">
+      <svg viewBox="0 0 200 150" width="58mm">
+        <line x1="20" y1="10" x2="80" y2="10" stroke="#1d2433" stroke-width="4"/>
+        <polyline points="50,12 40,20 60,28 40,36 60,44 50,52" fill="none" stroke="#e8891c" stroke-width="2.5"/>
+        <circle cx="50" cy="66" r="14" fill="#4fd1c5"/>
+        <text x="50" y="100" font-size="10" text-anchor="middle">a riposo</text>
+        <line x1="120" y1="10" x2="180" y2="10" stroke="#1d2433" stroke-width="4"/>
+        <polyline points="150,12 138,24 162,36 138,48 162,60 138,72 162,84 150,94" fill="none" stroke="#e8891c" stroke-width="2.5"/>
+        <circle cx="150" cy="108" r="14" fill="#4fd1c5"/>
+        <line x1="172" y1="112" x2="172" y2="80" stroke="#d9534f" stroke-width="3"/><polygon points="166,82 172,70 178,82" fill="#d9534f"/>
+        <text x="150" y="140" font-size="10" text-anchor="middle">allungata: tira su</text>
+      </svg>
+    </figure>
+  </div>
+
+  <h3>I pendoli</h3>
+  <div class="row">
+    <div class="grow">
+      <p>Un <b>pendolo</b> è un peso appeso a un filo che oscilla avanti e indietro. Nel laboratorio lo costruisci con lo strumento <span class="btn">Asta</span>: clic su una pallina e poi nel vuoto, dove verrà messo il perno.</p>
+      <p>Il tempo di un'oscillazione completa (andata e ritorno) si chiama <b>periodo</b>. Il periodo dipende dalla <b>lunghezza</b> del filo e dalla <b>gravità</b>. Dipende anche dalla massa della pallina? Scoprilo con l'esperimento E.</p>
+    </div>
+    <figure style="width:50mm">
+      <svg viewBox="0 0 170 150" width="50mm">
+        <line x1="40" y1="12" x2="130" y2="12" stroke="#1d2433" stroke-width="4"/>
+        <circle cx="85" cy="12" r="4" fill="#1d2433"/>
+        <line x1="85" y1="12" x2="85" y2="120" stroke="#c0c7d3" stroke-dasharray="3 3"/>
+        <line x1="85" y1="12" x2="130" y2="110" stroke="#5b6475" stroke-width="2"/>
+        <circle cx="134" cy="118" r="12" fill="#8a5cc2"/>
+        <circle cx="36" cy="118" r="12" fill="#8a5cc2" opacity=".3"/>
+        <path d="M50 134 Q 85 150 120 134" fill="none" stroke="#2f7de1" stroke-width="2"/>
+        <polygon points="118,128 126,132 118,139" fill="#2f7de1"/>
+        <text x="118" y="60" font-size="11">L</text>
+      </svg>
+    </figure>
+  </div>
+
+  <h3>L'energia</h3>
+  <p>L'<b>energia</b> è la capacità di "fare qualcosa": muovere un oggetto, sollevarlo, deformarlo. Nel laboratorio ce ne sono tre tipi, e il grafico <b>Energia</b> le mostra istante per istante:</p>
+  <table>
+    <tr><th style="width:26%">Tipo</th><th>Quando c'è</th><th style="width:26%">Per i più curiosi</th></tr>
+    <tr><td><b>Cinetica</b> (Ec)</td><td>Quando un oggetto si muove. Più è veloce e pesante, più ne ha.</td><td>Ec = ½ · m · v<sup>2</sup></td></tr>
+    <tr><td><b>Potenziale</b> (Ep)</td><td>Quando un oggetto è in alto: cadendo può trasformarla in movimento.</td><td>Ep = m · g · h</td></tr>
+    <tr><td><b>Elastica</b> (Ee)</td><td>Quando una molla è allungata o schiacciata.</td><td>dipende dalla deformazione</td></tr>
+    <tr><td><b>Totale</b> (Tot)</td><td>La somma delle tre.</td><td></td></tr>
+  </table>
+  <div class="row">
+    <div class="grow">
+      <p>L'energia <b>non si crea e non si distrugge: si trasforma</b>. In un pendolo, quando la pallina è in alto ha tanta energia potenziale e poca cinetica. Quando passa in basso è il contrario. La somma resta quasi uguale.</p>
+      <p>Se il totale scende, vuol dire che una parte dell'energia è stata "persa" dal sistema, per esempio per attrito o in un urto non elastico: nel mondo reale diventerebbe calore o rumore.</p>
+    </div>
+    <figure style="width:70mm">
+      <svg viewBox="0 0 240 120" width="70mm">
+        <line x1="20" y1="100" x2="235" y2="100" stroke="#1d2433"/>
+        <line x1="20" y1="10" x2="20" y2="100" stroke="#1d2433"/>
+        <path d="M20 30 C 40 30, 45 100, 65 100 S 90 30, 110 30 S 135 100, 155 100 S 180 30, 200 30 S 225 100, 235 90" fill="none" stroke="#1f9e93" stroke-width="2"/>
+        <path d="M20 100 C 40 100, 45 30, 65 30 S 90 100, 110 100 S 135 30, 155 30 S 180 100, 200 100 S 225 30, 235 40" fill="none" stroke="#e05555" stroke-width="2"/>
+        <line x1="20" y1="28" x2="235" y2="28" stroke="#d4a106" stroke-width="2.5"/>
+        <text x="200" y="22" font-size="9" fill="#b08500">totale</text>
+        <text x="26" y="45" font-size="9" fill="#1f9e93">potenziale</text>
+        <text x="60" y="118" font-size="9" fill="#e05555">cinetica</text>
+        <text x="236" y="112" font-size="9" text-anchor="end" fill="#5b6475">tempo →</text>
+      </svg>
+      <figcaption>Pendolo: energia potenziale e cinetica si scambiano, il totale resta costante. I colori sono quelli del grafico nel laboratorio.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ============ 6. ESPERIMENTI A–C ============ -->
+<section class="page">
+  <h2>3. Esperimenti guidati</h2>
+  <p class="muted">Prima di ogni esperimento premi <span class="key">Canc</span> per partire da una scena vuota, se non è indicato diversamente. Rispondi a <b>Prevedi</b> <i>prima</i> di provare!</p>
+
+  <div class="exp">
+    <h3>A · Chi cade prima?</h3>
+    <p><span class="lab">Prepara</span> Crea una pallina piccola (Raggio 10). Poi, alla stessa altezza ma più a destra, una grande (Raggio 40). Premi <span class="key">Spazio</span> per mettere in pausa mentre le crei, e di nuovo <span class="key">Spazio</span> per farle partire insieme.</p>
+    <p><span class="lab">Prevedi</span> <span class="choice">la piccola arriva prima</span><span class="choice">la grande arriva prima</span><span class="choice">arrivano insieme</span></p>
+    <p><span class="lab">Osserva</span> Cosa è successo? Guarda anche le masse scritte sulle palline.</p>
+    <div class="write"></div>
+    <p class="small muted" style="margin-top:1.5mm">Prova anche con la gravità della Luna: cambia qualcosa?</p>
+  </div>
+
+  <div class="exp">
+    <h3>B · Rimbalzi</h3>
+    <p><span class="lab">Prepara</span> Porta l'<b>Elasticità</b> a 1 e lascia cadere una pallina dall'alto. Poi ripeti con elasticità 0,5 e con 0. Attiva <i>Scie</i> per vedere il percorso.</p>
+    <p><span class="lab">Prevedi</span> Con elasticità 0,5, fino a che altezza tornerà la pallina dopo il primo rimbalzo?</p>
+    <div class="write"></div>
+    <p style="margin-top:1.5mm"><span class="lab">Osserva</span> Guarda il grafico dell'energia: cosa fa la linea del totale a ogni rimbalzo?</p>
+    <div class="write"></div>
+  </div>
+
+  <div class="exp">
+    <h3>C · Il pendolo di Newton</h3>
+    <p><span class="lab">Prepara</span> Premi <span class="btn">Pendolo di Newton</span> nelle scene pronte.</p>
+    <p><span class="lab">Prevedi</span> Quando la prima pallina colpisce le altre, quante palline partono dall'altra parte?</p>
+    <div class="write"></div>
+    <p style="margin-top:1.5mm"><span class="lab">Osserva</span> Ora metti in pausa, trascina <b>due</b> palline di lato e lasciale andare. Cosa succede? Prova poi a portare l'elasticità a 0,5.</p>
+    <div class="write"></div>
+  </div>
+</section>
+
+<!-- ============ 7. ESPERIMENTI D–F ============ -->
+<section class="page">
+  <div class="exp">
+    <h3>D · La gara sulla rampa</h3>
+    <p><span class="lab">Prepara</span> Premi <span class="btn">Piano inclinato</span>: in cima ci sono tre palline di grandezza e massa diverse. Usa il <b>Rallentatore</b> per guardare meglio.</p>
+    <p><span class="lab">Prevedi</span> <span class="choice">vince la più grande</span><span class="choice">vince la più piccola</span><span class="choice">vanno tutte alla stessa velocità</span></p>
+    <p><span class="lab">Osserva</span> Guarda le distanze tra le palline mentre scendono: cambiano?</p>
+    <div class="write"></div>
+    <p style="margin-top:1.5mm">Ora premi di nuovo la scena, subito <span class="key">Spazio</span> per la pausa, porta l'<b>Attrito</b> a 0 e riprendi con <span class="key">Spazio</span>. (Attenzione: ogni scena pronta rimette i cursori ai suoi valori, per questo l'attrito va cambiato dopo.) Le palline girano ancora? Scendono più veloci o più lente di prima?</p>
+    <div class="write"></div>
+  </div>
+
+  <div class="exp">
+    <h3>E · Il periodo del pendolo</h3>
+    <p><span class="lab">Prepara</span> Con lo strumento <span class="btn">Asta</span> costruisci un pendolo lungo circa 1 m: usa i quadretti dello sfondo (1 quadretto = 1 m). Spostalo di lato e lascialo andare. Conta quante oscillazioni complete fa in 20 secondi (guarda il tempo <i>t</i> in alto a sinistra).</p>
+    <table>
+      <tr><th>Prova</th><th style="width:35%">Oscillazioni in 20 s</th></tr>
+      <tr><td>Pendolo lungo 1 m, pallina normale</td><td></td></tr>
+      <tr><td>Stessa lunghezza, pallina con densità 40 (4 volte più pesante)</td><td></td></tr>
+      <tr><td>Pendolo lungo 2 m</td><td></td></tr>
+      <tr><td>Pendolo lungo 1 m, gravità della Luna</td><td></td></tr>
+    </table>
+    <p><span class="lab">Spiega</span> Da cosa dipende il periodo? Da cosa <b>non</b> dipende?</p>
+    <div class="write"></div>
+  </div>
+
+  <div class="exp">
+    <h3>F · Scontro tra palline</h3>
+    <p><span class="lab">Prepara</span> Premi <span class="btn">Scontro</span>. Compare il cursore <b>Massa centro</b>, che cambia la massa delle tre palline ferme al centro.</p>
+    <p><span class="lab">Prevedi</span> Se le palline al centro sono molto pesanti (10 kg), cosa succederà alle palline che arrivano dalle rampe?</p>
+    <div class="write"></div>
+    <p style="margin-top:1.5mm"><span class="lab">Osserva</span> Ripeti con massa 0,2 kg. Che differenza c'è?</p>
+    <div class="write"></div>
+  </div>
+
+  <div class="box idea"><div class="box-title">Sfida libera</div>
+    <p>Disegna con il tasto destro un percorso di rampe e muri in cui una pallina, lanciata da sinistra, arrivi in un "canestro" a destra. Poi prova a farlo sulla Luna!</p>
+  </div>
+</section>
+
+<!-- ============ 8. GLOSSARIO ============ -->
+<section class="page">
+  <h2>4. Parole da sapere</h2>
+  <dl class="gloss">
+    <dt>Massa (kg)</dt><dd>Quanta materia c'è in un oggetto. Più massa ha, più è difficile metterlo in movimento o fermarlo.</dd>
+    <dt>Densità</dt><dd>Quanta massa c'è in un certo spazio. Ferro e legno hanno densità diverse.</dd>
+    <dt>Velocità (m/s)</dt><dd>Quanto spazio si percorre in un secondo, e in che direzione.</dd>
+    <dt>Vettore</dt><dd>Una grandezza che ha un valore e anche una direzione: si disegna con una freccia. La velocità è un vettore.</dd>
+    <dt>Accelerazione</dt><dd>Quanto cambia la velocità ogni secondo.</dd>
+    <dt>Forza</dt><dd>Una spinta o una tirata che può cambiare il movimento di un oggetto. Si misura in newton (N).</dd>
+    <dt>Gravità</dt><dd>La forza che attira gli oggetti verso il basso (verso il centro della Terra, o della Luna…).</dd>
+    <dt>Attrito</dt><dd>La forza che si oppone allo strisciare di due superfici una sull'altra.</dd>
+    <dt>Urto elastico / anelastico</dt><dd>In un urto elastico il movimento si conserva tutto; in uno anelastico se ne perde una parte, o tutto.</dd>
+    <dt>Quantità di moto</dt><dd>Massa × velocità. Negli urti la quantità di moto totale resta la stessa.</dd>
+    <dt>Legge di Hooke</dt><dd>La forza di una molla è proporzionale a quanto è allungata o compressa.</dd>
+    <dt>Periodo</dt><dd>Il tempo che un pendolo, o una molla, impiega per fare un'oscillazione completa.</dd>
+    <dt>Energia cinetica / potenziale / elastica</dt><dd>L'energia dovuta al movimento, all'altezza e alla deformazione di una molla.</dd>
+    <dt>Conservazione dell'energia</dt><dd>L'energia non si crea e non si distrugge, si trasforma da un tipo all'altro.</dd>
+    <dt>Simulazione</dt><dd>Un programma che calcola come si comporterebbe un sistema reale seguendo le leggi della fisica. È un modello: somiglia alla realtà, ma la semplifica.</dd>
+  </dl>
+
+  <div class="box attenzione" style="margin-top:6mm"><div class="box-title">Simulazione e realtà</div>
+    <p>Il laboratorio è un <b>modello</b>: per esempio non c'è l'aria e le palline sono dischi piatti. Per questo alcune cose vanno diversamente che nel mondo reale. Quando noti una differenza, chiediti: <i>quale semplificazione la causa?</i> È una domanda da vero scienziato.</p>
+  </div>
+
+  <h3>La mia riflessione</h3>
+  <p>Quale esperimento ti ha sorpreso di più, e perché?</p>
+  <div class="write"></div><div class="write"></div><div class="write"></div>
+</section>
+
+</body>
+</html>

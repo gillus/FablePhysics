@@ -4,6 +4,8 @@ Laboratorio di fisica 2D in un unico file HTML, senza librerie: motore fisico sc
 
 **Apri `fisica.html` nel browser e basta.** Oppure la demo su GitHub Pages: https://gillus.github.io/FablePhysics/fisica.html
 
+**Per la scuola:** [`docs/guida-studenti.pdf`](docs/guida-studenti.pdf) è una guida di 8 pagine da distribuire agli studenti (scuola secondaria di primo grado), con i comandi, le idee di fisica spiegate in modo semplice ed esperimenti guidati. Il sorgente è `docs/guida-studenti.html`, da cui il PDF si rigenera con Chrome (il comando è in testa al file).
+
 ## Cosa fa
 
 - Gravità (preset Luna / Terra / Giove / zero-g), urti con elasticità e attrito regolabili, palline di massa diversa
